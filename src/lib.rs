@@ -1,26 +1,26 @@
 #![doc = include_str!("../README.md")]
 
 use core::str::FromStr;
+use mce_lib::public::ext::*;
+use mce_lib::public::{
+    CodeBlock, Config, ConfigAndSpan, ConfigContentAndSpan, MacroDeepResult, MacroResult,
+    OwnedStringSlice, ReadmeBlock, ReadmeExtracted, assert,
+};
 use proc_macro::TokenStream as ProcTokenStream;
 use proc_macro_rules::rules;
 use proc_macro2::{Literal, Span, TokenStream};
 use quote::quote;
-use readme_code_extractor_lib::public::ext::*;
-use readme_code_extractor_lib::public::{
-    CodeBlock, Config, ConfigAndSpan, ConfigContentAndSpan, MacroDeepResult, MacroResult,
-    OwnedStringSlice, ReadmeBlock, ReadmeExtracted, assert,
-};
 
 type MacroStreamResult = MacroResult<TokenStream>;
 type MacroStreamDeepResult = MacroDeepResult<TokenStream>;
 
-const _ASSERT_README_CODE_EXTRACTOR_LIB_VERSION: () = {
-    if !readme_code_extractor_lib::is_exact_version(env!("CARGO_PKG_VERSION")) {
-        // See prudent-rs/readme_code_extractor -> src/lib.rs for an explanation on why here we
-        // can't report more details.
+const _ASSERT_MCE_LIB_VERSION: () = {
+    if !mce_lib::is_exact_version(env!("CARGO_PKG_VERSION")) {
+        // See prudent-rs/mce -> src/lib.rs for an explanation on why here we can't report more
+        // details.
         panic!(
-            "prudent-rs/readme-code-extractor-proc is of different version than \
-             prudent-rs/readme-code-extractor-lib. Please report this as an issue, along with \
+            "prudent-rs/mce-proc is of different version than \
+             prudent-rs/mce-lib. Please report this as an issue, along with \
              both versions."
         );
     }
@@ -60,7 +60,7 @@ fn all_impl(input: TokenStream) -> MacroStreamResult {
     rules!(input => {
         ( $config_toml_content:literal ) => {
 
-            let cfg_content_and_span = readme_code_extractor_lib::public::config_content_and_span(
+            let cfg_content_and_span = mce_lib::public::config_content_and_span(
                 &config_toml_content)?;
             // @TODO use
             /*let _preamble_txt= if let Some(preamble_text) = readme_extracted.preamble_text() {};
@@ -107,7 +107,7 @@ fn all_by_file_impl(input: TokenStream) -> MacroStreamResult {
     rules!(input => {
         ( $config_toml_file_path:literal ) => {
 
-            let (cfg_content_and_span, toml_config_file_path) = readme_code_extractor_lib::public::config_content_and_span_by_file(
+            let (cfg_content_and_span, toml_config_file_path) = mce_lib::public::config_content_and_span_by_file(
                 &config_toml_file_path)?;
 
             let prefix_stream = load_file_to_const(
@@ -147,7 +147,7 @@ fn nth_impl(input: TokenStream) -> MacroStreamResult {
     rules!(input => {
         ( $config_toml_content:literal @ $index:literal) => {
 
-            let cfg_content_and_span = readme_code_extractor_lib::public::config_content_and_span(
+            let cfg_content_and_span = mce_lib::public::config_content_and_span(
                 &config_toml_content)?;
             let code_block_index = code_block_index(&index)?;
             nth_by_config_content_and_span(TokenStream::new(), &cfg_content_and_span, code_block_index)
@@ -172,7 +172,7 @@ fn nth_by_file_impl(input: TokenStream) -> MacroStreamResult {
     rules!(input => {
         ( $config_toml_file_path:literal @ $index:literal) => {
 
-            let (cfg_content_and_span, toml_config_file_path) = readme_code_extractor_lib::public::config_content_and_span_by_file(
+            let (cfg_content_and_span, toml_config_file_path) = mce_lib::public::config_content_and_span_by_file(
                 &config_toml_file_path)?;
 
             let prefix_stream = load_file_to_const(
@@ -213,9 +213,8 @@ fn tag_impl_shared_cfg_by_content(
     tag: Literal,
     tag_exactly_one_match: bool,
 ) -> MacroStreamResult {
-    let cfg_content_and_span =
-        readme_code_extractor_lib::public::config_content_and_span(&config_toml_content)?;
-    let tag = readme_code_extractor_lib::public::string_literal_content(&tag)?;
+    let cfg_content_and_span = mce_lib::public::config_content_and_span(&config_toml_content)?;
+    let tag = mce_lib::public::string_literal_content(&tag)?;
 
     tag_by_config_content_and_span(
         TokenStream::new(),
@@ -253,7 +252,7 @@ fn tag_impl_shared_cfg_by_file(
     tag_exactly_one_match: bool,
 ) -> MacroStreamResult {
     let (cfg_content_and_span, toml_config_file_path) =
-        readme_code_extractor_lib::public::config_content_and_span_by_file(&config_toml_file_path)?;
+        mce_lib::public::config_content_and_span_by_file(&config_toml_file_path)?;
 
     let prefix_stream = load_file_to_const(cfg_content_and_span.span(), &toml_config_file_path)?;
 
@@ -271,7 +270,7 @@ fn tag_impl_shared(
     tag: Literal,
     tag_exactly_one_match: bool,
 ) -> MacroStreamResult {
-    let tag = readme_code_extractor_lib::public::string_literal_content(&tag)?;
+    let tag = mce_lib::public::string_literal_content(&tag)?;
     tag_by_config_content_and_span(
         prefix_stream,
         cfg_content_and_span,
@@ -344,11 +343,10 @@ fn selected_by_config_content_and_span<F>(
 where
     F: FnMut(&Vec<&dyn CodeBlock>, usize, &dyn CodeBlock) -> MacroDeepResult<bool>,
 {
-    let config_and_span = readme_code_extractor_lib::public::config_and_span(cfg_content_and_span)?;
-    let readme_loaded = readme_code_extractor_lib::public::readme_load(&config_and_span)?;
+    let config_and_span = mce_lib::public::config_and_span(cfg_content_and_span)?;
+    let readme_loaded = mce_lib::public::readme_load(&config_and_span)?;
     let span = config_and_span.span();
-    let readme_extracted =
-        readme_code_extractor_lib::public::readme_extract(&readme_loaded).spanned(span)?;
+    let readme_extracted = mce_lib::public::readme_extract(&readme_loaded).spanned(span)?;
 
     let (config, span) = (config_and_span.config(), config_and_span.span());
 
@@ -361,7 +359,7 @@ macro_rules! token_stream_from_str {
             let input_string = $input_string;
             TokenStream::from_str(input_string).map_error_dbg_with(|| {
                 format!(
-                    "readme-code-extractor-proc failed to parse: {}\nunpaired or incorrect Rust \
+                    "mce-proc failed to parse: {}\nunpaired or incorrect Rust \
                 tokens in: {}",
                     $err_intended_result_description, input_string
                 )
@@ -373,10 +371,9 @@ macro_rules! token_stream_from_str {
 /// Param code_block_filter is a closure that takes:
 /// - usize 0-based index of the code block being handled
 /// - &dyn [CodeBlock]
-/// - &str current code block's respective tag from
-///   [readme_code_extractor_lib::public::config::headers::Tags::tags] (or an empty string
-///   slice if there are no tags).
-/// and returns `bool` whether to include the code block or not.
+/// - &str current code block's respective tag from [mce_lib::public::config::headers::Tags::tags]
+///   (or an empty string slice if there are no tags). and returns `bool` whether to include the
+///   code block or not.
 fn impl_filtered<'a, F>(
     mut prefix_stream: TokenStream,
     config: &dyn Config,
