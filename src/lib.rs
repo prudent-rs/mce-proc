@@ -45,9 +45,9 @@ const _ASSERT_MCE_LIB_VERSION: () = {
 ///     in a module or a function), so the raw string's actual content starting on a new line at
 ///     column 0 should look OK.
 ///
-/// NOT filtering by "tag:" value in the triple backtick suffix (if any).
+/// NOT filtering by "mce_tag:" value in the triple backtick suffix (if any).
 ///
-/// Whether the "tag:" value is passed through or not is controlled by TOML configuration.
+/// Whether the "mce_tag:" value is passed through or not is controlled by TOML configuration.
 #[proc_macro]
 pub fn all(input: ProcTokenStream) -> ProcTokenStream {
     match all_impl(input.into()) {
@@ -184,98 +184,98 @@ fn nth_by_file_impl(input: TokenStream) -> MacroStreamResult {
     })
 }
 // ----
-/// Process (adjust and pass through) only code block(s) with a given tag.
+/// Process (adjust and pass through) only code block(s) with a given `mce_tag`.
 /// - if `one` then expecting exactly ONE matching code block.
 /// - if `any` then any number of matching code blocks (including zero) is fine.
 ///
-/// Configuration is in the first input. Tag is in the second input.
+/// Configuration is in the first input. `mce_tag` is in the second input.
 #[proc_macro]
-pub fn tag(input: ProcTokenStream) -> ProcTokenStream {
-    match tag_impl(input.into()) {
+pub fn mce_tag(input: ProcTokenStream) -> ProcTokenStream {
+    match mce_tag_impl(input.into()) {
         Ok(input) => input.into(),
         Err(diag) => diag.emit_as_expr_tokens().into(),
     }
 }
 
-fn tag_impl(input: TokenStream) -> MacroStreamResult {
+fn mce_tag_impl(input: TokenStream) -> MacroStreamResult {
     rules!(input => {
-        ( $config_toml_content:literal one @ $tag:literal) => {
-            tag_impl_shared_cfg_by_content(config_toml_content, tag, true)
+        ( $config_toml_content:literal one @ $mce_tag:literal) => {
+            mce_tag_impl_shared_cfg_by_content(config_toml_content, mce_tag, true)
         }
-        ( $config_toml_content:literal any @ $tag:literal) => {
-            tag_impl_shared_cfg_by_content(config_toml_content, tag, false)
+        ( $config_toml_content:literal any @ $mce_tag:literal) => {
+            mce_tag_impl_shared_cfg_by_content(config_toml_content, mce_tag, false)
         }
     })
 }
 
-fn tag_impl_shared_cfg_by_content(
+fn mce_tag_impl_shared_cfg_by_content(
     config_toml_content: Literal,
-    tag: Literal,
-    tag_exactly_one_match: bool,
+    mce_tag: Literal,
+    mce_tag_exactly_one_match: bool,
 ) -> MacroStreamResult {
     let cfg_content_and_span = mce_lib::public::config_content_and_span(&config_toml_content)?;
-    let tag = mce_lib::public::string_literal_content(&tag)?;
+    let mce_tag = mce_lib::public::string_literal_content(&mce_tag)?;
 
-    tag_by_config_content_and_span(
+    mce_tag_by_config_content_and_span(
         TokenStream::new(),
         &cfg_content_and_span,
-        tag.as_ref(),
-        tag_exactly_one_match,
+        mce_tag.as_ref(),
+        mce_tag_exactly_one_match,
     )
 }
 // ----
 
 #[proc_macro]
-pub fn tag_by_file(input: ProcTokenStream) -> ProcTokenStream {
-    match tag_by_file_impl(input.into()) {
+pub fn mce_tag_by_file(input: ProcTokenStream) -> ProcTokenStream {
+    match mce_tag_by_file_impl(input.into()) {
         Ok(input) => input.into(),
         Err(diag) => diag.emit_as_expr_tokens().into(),
     }
 }
 
-fn tag_by_file_impl(input: TokenStream) -> MacroStreamResult {
+fn mce_tag_by_file_impl(input: TokenStream) -> MacroStreamResult {
     rules!(input => {
-        ( $config_toml_file_path:literal one @ $tag:literal) => {
+        ( $config_toml_file_path:literal one @ $mce_tag:literal) => {
 
-            tag_impl_shared_cfg_by_file(config_toml_file_path, tag, true)
+            mce_tag_impl_shared_cfg_by_file(config_toml_file_path, mce_tag, true)
         }
-        ( $config_toml_file_path:literal any @ $tag:literal) => {
+        ( $config_toml_file_path:literal any @ $mce_tag:literal) => {
 
-            tag_impl_shared_cfg_by_file(config_toml_file_path, tag, false)
+            mce_tag_impl_shared_cfg_by_file(config_toml_file_path, mce_tag, false)
         }
     })
 }
 
-fn tag_impl_shared_cfg_by_file(
+fn mce_tag_impl_shared_cfg_by_file(
     config_toml_file_path: Literal,
-    tag: Literal,
-    tag_exactly_one_match: bool,
+    mce_tag: Literal,
+    mce_tag_exactly_one_match: bool,
 ) -> MacroStreamResult {
     let (cfg_content_and_span, toml_config_file_path) =
         mce_lib::public::config_content_and_span_by_file(&config_toml_file_path)?;
 
     let prefix_stream = load_file_to_const(cfg_content_and_span.span(), &toml_config_file_path)?;
 
-    tag_impl_shared(
+    mce_tag_impl_shared(
         prefix_stream,
         &cfg_content_and_span,
-        tag,
-        tag_exactly_one_match,
+        mce_tag,
+        mce_tag_exactly_one_match,
     )
 }
 
-fn tag_impl_shared(
+fn mce_tag_impl_shared(
     prefix_stream: TokenStream,
     cfg_content_and_span: &impl ConfigContentAndSpan,
-    tag: Literal,
-    tag_exactly_one_match: bool,
+    mce_tag: Literal,
+    mce_tag_exactly_one_match: bool,
 ) -> MacroStreamResult {
-    let tag = mce_lib::public::string_literal_content(&tag)?;
-    tag_by_config_content_and_span(
+    let mce_tag = mce_lib::public::string_literal_content(&mce_tag)?;
+    mce_tag_by_config_content_and_span(
         prefix_stream,
         cfg_content_and_span,
-        tag.as_ref(),
-        tag_exactly_one_match,
+        mce_tag.as_ref(),
+        mce_tag_exactly_one_match,
     )
 }
 // ----
@@ -307,11 +307,11 @@ fn nth_by_config_content_and_span(
     )
 }
 
-fn tag_by_config_content_and_span(
+fn mce_tag_by_config_content_and_span(
     prefix_stream: TokenStream,
     cfg_content_and_span: &impl ConfigContentAndSpan,
-    tag: &str,
-    tag_exactly_one_match: bool,
+    mce_tag: &str,
+    mce_tag_exactly_one_match: bool,
 ) -> MacroStreamResult {
     let mut already_found = false;
 
@@ -319,16 +319,17 @@ fn tag_by_config_content_and_span(
         prefix_stream,
         cfg_content_and_span,
         |_, _, code_block| {
-            let found = code_block.tag() == Some(tag);
-            assert::true_or_error(!found || !tag_exactly_one_match || !already_found, || {
-                format!("already found one code block with the same tag: {tag}")
-            })?;
+            let found = code_block.mce_tag() == Some(mce_tag);
+            assert::true_or_error(
+                !found || !mce_tag_exactly_one_match || !already_found,
+                || format!("already found one code block with the same mce_tag: {mce_tag}"),
+            )?;
             already_found |= found;
             Ok(found)
         },
     );
-    assert::true_or_error(!tag_exactly_one_match || already_found, || {
-        format!("did not find a code block with the given tag: {tag}")
+    assert::true_or_error(!mce_tag_exactly_one_match || already_found, || {
+        format!("did not find a code block with the given mce_tag: {mce_tag}")
     })
     .spanned(cfg_content_and_span.span())?;
     result
@@ -371,9 +372,9 @@ macro_rules! token_stream_from_str {
 /// Param code_block_filter is a closure that takes:
 /// - usize 0-based index of the code block being handled
 /// - &dyn [CodeBlock]
-/// - &str current code block's respective tag from [mce_lib::public::config::headers::Tags::tags]
-///   (or an empty string slice if there are no tags). and returns `bool` whether to include the
-///   code block or not.
+/// - &str current code block's respective mce_tag from
+///   [mce_lib::public::config::headers::Tags::tags] (or an empty string slice if there are no
+///   tags). and returns `bool` whether to include the code block or not.
 fn impl_filtered<'a, F>(
     mut prefix_stream: TokenStream,
     config: &dyn Config,
@@ -398,17 +399,18 @@ where
         format!("const _: &str = ::std::include_str!(\"{markdown_file_path}\");\n");
 
     let (mut generated_per_block, mut generated_all) = {
-        let config_generated_len_per_block =
-            headers.top_prefix().len() + headers.tag_suffix().len() + headers.end_suffix().len();
+        let config_generated_len_per_block = headers.top_prefix().len()
+            + headers.mce_tag_suffix().len()
+            + headers.end_suffix().len();
 
-        let max_code_block_and_tag_len = code_blocks
+        let max_code_block_and_mce_tag_len = code_blocks
             .iter()
-            .map(|b| b.code().len() + b.tag().map_or(0, |tag| tag.len()))
+            .map(|b| b.code().len() + b.mce_tag().map_or(0, |mce_tag| mce_tag.len()))
             .max()
             .unwrap_or(0);
 
         let generated_per_block =
-            String::with_capacity(config_generated_len_per_block + max_code_block_and_tag_len);
+            String::with_capacity(config_generated_len_per_block + max_code_block_and_mce_tag_len);
 
         // @TODO preamble etc.
         let total_code_blocks_len = code_blocks.iter().map(|b| b.code().len()).sum::<usize>();
@@ -418,7 +420,7 @@ where
             code_to_load_markdown_file.len()
                 + config.start_prefix().len()
                 + total_code_blocks_len
-                + max_code_block_and_tag_len * code_blocks.len()
+                + max_code_block_and_mce_tag_len * code_blocks.len()
                 + config.final_suffix().len(),
         );
 
@@ -436,9 +438,9 @@ where
         // @TODO triple_backtick_suffix
         generated_per_block.push_str(headers.top_prefix());
         if config.pass_through_tags() {
-            generated_per_block.push_str(block.tag().unwrap_or(""));
+            generated_per_block.push_str(block.mce_tag().unwrap_or(""));
         }
-        generated_per_block.push_str(headers.tag_suffix());
+        generated_per_block.push_str(headers.mce_tag_suffix());
 
         let block_code = block.code();
         // Verify that the pushed part is a well-formed Rust token stream, that is, all parens (..),
@@ -451,7 +453,7 @@ where
         generated_per_block.push_str(headers.end_suffix());
         let _ = token_stream_from_str!(
             &generated_per_block,
-            "Extended code block: Prefix, tag, after_tag, the original code and suffix."
+            "Extended code block: Prefix, mce_tag, after_mce_tag, the original code and suffix."
         );
 
         generated_all.push_str(&generated_per_block);
