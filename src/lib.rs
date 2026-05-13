@@ -1,14 +1,16 @@
 #![doc = include_str!("../README.md")]
 
 use core::str::FromStr;
-use mce_lib::public::ext::*;
 use mce_lib::public::{
-    CodeBlock, Config, ConfigAndSpan, ConfigContentAndSpan, MacroDeepResult, MacroResult,
-    OwnedStringSlice, ReadmeBlock, ReadmeExtracted, assert,
+    CodeBlock, Config, ConfigAndSpan, ConfigContentAndSpan, OwnedStringSlice, ReadmeBlock,
+    ReadmeExtracted,
 };
 use proc_macro::TokenStream as ProcTokenStream;
 use proc_macro_rules::rules;
 use proc_macro2::{Literal, Span, TokenStream};
+use proc_macro2_diagnostics_more::ext_all::*;
+use proc_macro2_diagnostics_more::{MacroDeepResult, MacroResult, assert};
+
 use quote::quote;
 
 type MacroStreamResult = MacroResult<TokenStream>;
@@ -92,15 +94,14 @@ fn load_file_to_const(span: Span, toml_config_file_path: &OwnedStringSlice) -> M
     let prefix_stream =
         format!("const _: &str = ::std::include_str!(\"{toml_config_file_path}\");\n");
 
-    TokenStream::from_str(&prefix_stream).map_error_dbg_with_for(
-        || {
+    TokenStream::from_str(&prefix_stream)
+        .map_error_dbg_with(|| {
             format!(
                 "the TOML config file path is not well formed, or it failed to parse: {}",
                 prefix_stream
             )
-        },
-        span,
-    )
+        })
+        .spanned(span)
 }
 
 fn all_by_file_impl(input: TokenStream) -> MacroStreamResult {
@@ -132,15 +133,15 @@ pub fn nth(input: ProcTokenStream) -> ProcTokenStream {
 
 fn code_block_index(index: &Literal) -> MacroResult<usize> {
     let index_string = index.to_string();
-    index_string.parse::<usize>().map_error_dbg_with_for(
-        || {
+    index_string
+        .parse::<usize>()
+        .map_error_dbg_with(|| {
             format!(
                 "Expecting a non-negative (usize) index literal, but received: {}",
                 index_string
             )
-        },
-        index.span(),
-    )
+        })
+        .spanned(index.span())
 }
 
 fn nth_impl(input: TokenStream) -> MacroStreamResult {
@@ -296,7 +297,7 @@ fn nth_by_config_content_and_span(
         prefix_stream,
         cfg_content_and_span,
         |code_blocks, idx, _| {
-            assert::true_or_error(idx < code_blocks.len(), || {
+            assert::true_or_error_with(idx < code_blocks.len(), || {
                 format!(
                     "The index {idx} is non-negative (usize), but it's outside of {} code blocks.",
                     code_blocks.len()
@@ -320,7 +321,7 @@ fn mce_tag_by_config_content_and_span(
         cfg_content_and_span,
         |_, _, code_block| {
             let found = code_block.mce_tag() == Some(mce_tag);
-            assert::true_or_error(
+            assert::true_or_error_with(
                 !found || !mce_tag_exactly_one_match || !already_found,
                 || format!("already found one code block with the same mce_tag: {mce_tag}"),
             )?;
@@ -328,7 +329,7 @@ fn mce_tag_by_config_content_and_span(
             Ok(found)
         },
     );
-    assert::true_or_error(!mce_tag_exactly_one_match || already_found, || {
+    assert::true_or_error_with(!mce_tag_exactly_one_match || already_found, || {
         format!("did not find a code block with the given mce_tag: {mce_tag}")
     })
     .spanned(cfg_content_and_span.span())?;

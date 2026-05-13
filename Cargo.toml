@@ -28,6 +28,7 @@ unknown_lints = { level = "forbid"}
 [dependencies]
 proc-macro-rules = "0.4.0"
 proc-macro2 = {version="1.0.60", features=["span-locations"] }
+proc-macro2-diagnostics-more = { version = "0.0.1", path = "../proc-macro2-diagnostics-more", features = ["alloc", "proc-macro2-diagnostics"]}
 
 # EXACT VERSION with = prefix
 mce-lib = {version="= 0.0.1", path="../mce-lib", features=["std"]}
