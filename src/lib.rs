@@ -75,10 +75,10 @@ fn all_impl(input: TokenStream) -> MacroStreamResult {
 }
 // ----
 
-/// Process (adjust and pass through) all code blocks. Configuration is in a (TOML) file, its file
-/// path is in the input.
+/// Process (adjust and pass through) all code block in the given inputs; configuration is in a
+/// (TOML) file, its file path is in the input.
 ///
-/// See also [all].
+/// See [all].
 #[proc_macro]
 pub fn all_by_file(input: ProcTokenStream) -> ProcTokenStream {
     match all_by_file_impl(input.into()) {
@@ -122,7 +122,7 @@ fn all_by_file_impl(input: TokenStream) -> MacroStreamResult {
 
 /// Process (adjust and pass through) only n-th code block from the given input.
 ///
-/// Configuration is in the first input. 0-based index is in the second input.
+/// Configuration (TOML text) is in the first input. 0-based index is in the second input.
 #[proc_macro]
 pub fn nth(input: ProcTokenStream) -> ProcTokenStream {
     match nth_impl(input.into()) {
@@ -157,10 +157,10 @@ fn nth_impl(input: TokenStream) -> MacroStreamResult {
 }
 // ----
 
-/// Process (adjust and pass through) only n-th code block from the given input.
+/// Process (adjust and pass through) only n-th code block from the given input; configuration is in
+/// a (TOML) file, its file path is in the input.
 ///
-/// Configuration is in a (TOML) file, its file path is in the first input. 0-based index is in the
-/// second input.
+/// Configuration (TOML) file path is in the first input. 0-based index is in the second input.
 #[proc_macro]
 pub fn nth_by_file(input: ProcTokenStream) -> ProcTokenStream {
     match nth_by_file_impl(input.into()) {
@@ -189,7 +189,7 @@ fn nth_by_file_impl(input: TokenStream) -> MacroStreamResult {
 /// - if `one` then expecting exactly ONE matching code block.
 /// - if `any` then any number of matching code blocks (including zero) is fine.
 ///
-/// Configuration is in the first input. `mce_tag` is in the second input.
+/// Configuration (TOML text) is in the first input. `mce_tag` is in the second input.
 #[proc_macro]
 pub fn mce_tag(input: ProcTokenStream) -> ProcTokenStream {
     match mce_tag_impl(input.into()) {
@@ -226,6 +226,12 @@ fn mce_tag_impl_shared_cfg_by_content(
 }
 // ----
 
+/// Process (adjust and pass through) only code block(s) with a given `mce_tag`; configuration is in
+/// a (TOML) file, its file path is in the input.
+///
+/// Configuration (TOML) file path is in the first input. `mce_tag` is in the second input.
+
+/// See [mce_tag].
 #[proc_macro]
 pub fn mce_tag_by_file(input: ProcTokenStream) -> ProcTokenStream {
     match mce_tag_by_file_impl(input.into()) {
