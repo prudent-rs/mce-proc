@@ -8,13 +8,12 @@ use mce_lib::public::{
 use proc_macro::TokenStream as ProcTokenStream;
 use proc_macro_rules::rules;
 use proc_macro2::{Literal, Span, TokenStream};
-use proc_macro2_diagnostics_more::ext_all::*;
+use proc_macro2_diagnostics_more::{DeepDiagnostic, ext_all::*};
 use proc_macro2_diagnostics_more::{MacroDeepResult, MacroResult, assert};
 
 use quote::quote;
 
 type MacroStreamResult = MacroResult<TokenStream>;
-type MacroStreamDeepResult = MacroDeepResult<TokenStream>;
 
 const _ASSERT_MCE_LIB_VERSION: () = {
     if !mce_lib::is_exact_version(env!("CARGO_PKG_VERSION")) {
@@ -365,13 +364,15 @@ macro_rules! token_stream_from_str {
     ($input_string:expr, $err_intended_result_description:expr) => {
         ({
             let input_string = $input_string;
-            TokenStream::from_str(input_string).map_error_dbg_with(|| {
-                format!(
-                    "mce-proc failed to parse: {}\nunpaired or incorrect Rust \
-                tokens in: {}",
-                    $err_intended_result_description, input_string
-                )
-            })?
+            TokenStream::from_str(input_string)
+                .map_error_dbg_with(|| {
+                    format!(
+                        "mce-proc failed to parse: {}
+                         unpaired or incorrect Rust tokens in: {}",
+                        $err_intended_result_description, input_string
+                    )
+                })
+                .map_err(DeepDiagnostic::to_string_based)?
         })
     };
 }
@@ -387,7 +388,7 @@ fn impl_filtered<'a, F>(
     config: &dyn Config,
     mut readme_extracted: impl ReadmeExtracted<'a>,
     mut code_block_filter: F,
-) -> MacroStreamDeepResult
+) -> MacroDeepResult<TokenStream>
 where
     F: FnMut(&Vec<&dyn CodeBlock>, usize, &dyn CodeBlock) -> MacroDeepResult<bool>,
 {
