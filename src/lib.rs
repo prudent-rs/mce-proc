@@ -8,7 +8,7 @@ use mce_lib::public::{
 use proc_macro::TokenStream as ProcTokenStream;
 use proc_macro_rules::rules;
 use proc_macro2::{Literal, Span, TokenStream};
-use proc_macro2_diagnostics_more::{DeepDiagnostic, ext_all::*};
+use proc_macro2_diagnostics_more::{DeepDiagnostic, ext::*};
 use proc_macro2_diagnostics_more::{MacroDeepResult, MacroResult, assert};
 
 use quote::quote;
@@ -307,7 +307,8 @@ fn nth_by_config_content_and_span(
                     "The index {idx} is non-negative (usize), but it's outside of {} code blocks.",
                     code_blocks.len()
                 )
-            })?;
+            })
+            .to_string_based()?;
             Ok(idx == code_block_index)
         },
     )
@@ -329,7 +330,8 @@ fn mce_tag_by_config_content_and_span(
             assert::true_or_error_with(
                 !found || !mce_tag_exactly_one_match || !already_found,
                 || format!("already found one code block with the same mce_tag: {mce_tag}"),
-            )?;
+            )
+            .to_string_based()?;
             already_found |= found;
             Ok(found)
         },
