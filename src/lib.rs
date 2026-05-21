@@ -1,6 +1,8 @@
 #![doc = include_str!("../README.md")]
 
 use core::str::FromStr;
+use dis::prelude_ext::{alloc::*, core::*, proc_macro2_diagnostics::*};
+use dis::{Displayish, MacroDeepResult, MacroDiagnosticResult, assert};
 use mce_lib::public::{
     CodeBlock, Config, ConfigAndSpan, ConfigContentAndSpan, OwnedStringSlice, ReadmeBlock,
     ReadmeExtracted,
@@ -8,12 +10,10 @@ use mce_lib::public::{
 use proc_macro::TokenStream as ProcTokenStream;
 use proc_macro_rules::rules;
 use proc_macro2::{Literal, Span, TokenStream};
-use proc_macro2_diagnostics_more::{DeepDiagnostic, ext::*};
-use proc_macro2_diagnostics_more::{MacroDeepResult, MacroResult, assert};
 
 use quote::quote;
 
-type MacroStreamResult = MacroResult<TokenStream>;
+type MacroStreamResult = MacroDiagnosticResult<TokenStream>;
 
 const _ASSERT_MCE_LIB_VERSION: () = {
     if !mce_lib::is_exact_version(env!("CARGO_PKG_VERSION")) {
@@ -36,7 +36,7 @@ const _ASSERT_MCE_LIB_VERSION: () = {
 ///     - even though you do need to add a trailing backslash '\'
 ///     - they remove any leading whitespace on the second and successive lines
 ///   - need escaping of quote character '"" and backslash chacter '\'
-/// - or: a raw string
+/// - or: a RAW string
 ///   - RAW strings ARE GOOD - NO ESCAPING!
 ///   - Good for backslashes and paths on Windows.
 ///   - Good for multiline: No need to add a trailing backslash on each line (other than the last
@@ -100,6 +100,7 @@ fn load_file_to_const(span: Span, toml_config_file_path: &OwnedStringSlice) -> M
                 prefix_stream
             )
         })
+        .map_macro_err()
         .spanned(span)
 }
 
@@ -130,7 +131,7 @@ pub fn nth(input: ProcTokenStream) -> ProcTokenStream {
     }
 }
 
-fn code_block_index(index: &Literal) -> MacroResult<usize> {
+fn code_block_index(index: &Literal) -> MacroDiagnosticResult<usize> {
     let index_string = index.to_string();
     index_string
         .parse::<usize>()
@@ -140,6 +141,7 @@ fn code_block_index(index: &Literal) -> MacroResult<usize> {
                 index_string
             )
         })
+        .map_macro_err()
         .spanned(index.span())
 }
 
@@ -308,6 +310,7 @@ fn nth_by_config_content_and_span(
                     code_blocks.len()
                 )
             })
+            .map_macro_err()
             .to_string_based()?;
             Ok(idx == code_block_index)
         },
@@ -331,6 +334,7 @@ fn mce_tag_by_config_content_and_span(
                 !found || !mce_tag_exactly_one_match || !already_found,
                 || format!("already found one code block with the same mce_tag: {mce_tag}"),
             )
+            .map_macro_err()
             .to_string_based()?;
             already_found |= found;
             Ok(found)
@@ -339,6 +343,7 @@ fn mce_tag_by_config_content_and_span(
     assert::true_or_error_with(!mce_tag_exactly_one_match || already_found, || {
         format!("did not find a code block with the given mce_tag: {mce_tag}")
     })
+    .map_macro_err()
     .spanned(cfg_content_and_span.span())?;
     result
 }
@@ -374,7 +379,8 @@ macro_rules! token_stream_from_str {
                         $err_intended_result_description, input_string
                     )
                 })
-                .map_err(DeepDiagnostic::to_string_based)?
+                .map_macro_err()
+                .map_err(Displayish::to_string_based)?
         })
     };
 }
