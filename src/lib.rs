@@ -94,7 +94,7 @@ fn load_file_to_const(span: Span, toml_config_file_path: &OwnedStringSlice) -> M
         format!("const _: &str = ::std::include_str!(\"{toml_config_file_path}\");\n");
 
     TokenStream::from_str(&prefix_stream)
-        .map_error_dbg_with(|| {
+        .map_err_dbg_with(|| {
             format!(
                 "the TOML config file path is not well formed, or it failed to parse: {}",
                 prefix_stream
@@ -135,7 +135,7 @@ fn code_block_index(index: &Literal) -> MacroDiagnosticResult<usize> {
     let index_string = index.to_string();
     index_string
         .parse::<usize>()
-        .map_error_dbg_with(|| {
+        .map_err_dbg_with(|| {
             format!(
                 "Expecting a non-negative (usize) index literal, but received: {}",
                 index_string
@@ -372,7 +372,7 @@ macro_rules! token_stream_from_str {
         ({
             let input_string = $input_string;
             TokenStream::from_str(input_string)
-                .map_error_dbg_with(|| {
+                .map_err_dbg_with(|| {
                     format!(
                         "mce-proc failed to parse: {}
                          unpaired or incorrect Rust tokens in: {}",
