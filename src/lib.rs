@@ -63,11 +63,6 @@ fn all_impl(input: TokenStream) -> MacroStreamResult {
 
             let cfg_content_and_span = mce_lib::public::config_content_and_span(
                 &config_toml_content)?;
-            // @TODO use
-            /*let _preamble_txt= if let Some(preamble_text) = readme_extracted.preamble_text() {};
-            let preamble_code = if let Some(preamble_code) = readme_extracted.preamble_code() {};
-            ...
-            q.extend( q2);*/
             all_by_config_content_and_span(TokenStream::new(), &cfg_content_and_span)
         }
     })
@@ -231,7 +226,7 @@ fn mce_tag_impl_shared_cfg_by_content(
 /// a (TOML) file, its file path is in the input.
 ///
 /// Configuration (TOML) file path is in the first input. `mce_tag` is in the second input.
-
+///
 /// See [mce_tag].
 #[proc_macro]
 pub fn mce_tag_by_file(input: ProcTokenStream) -> ProcTokenStream {
