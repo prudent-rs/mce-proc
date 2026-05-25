@@ -28,9 +28,9 @@ const _ASSERT_MCE_LIB_VERSION: () = {
 };
 // ----
 
-/// Process (adjust and pass through) all code blocks in the given input.
+/// Process (adjust and pass through) all code blocks in the input markdown file.
 ///
-/// The given input is
+/// The given macro input is NOT the markdown, but a configuration (TOML text)
 /// - specified as an ordinary, non-raw, string literals `"..."`. Ordinary string literals
 ///   - are good for multiline
 ///     - even though you do need to add a trailing backslash '\'
