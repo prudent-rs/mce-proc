@@ -48,7 +48,7 @@ const _ASSERT_MCE_LIB_VERSION: () = {
 ///
 /// NOT filtering by "mce_tag:" value in the triple backtick suffix (if any).
 ///
-/// Whether the "mce_tag:" value is passed through or not is controlled by TOML configuration.
+/// @TODO move?: Whether the "mce_tag:" value is passed through or not is controlled by TOML configuration.
 #[proc_macro]
 pub fn all(input: ProcTokenStream) -> ProcTokenStream {
     match all_impl(input.into()) {
