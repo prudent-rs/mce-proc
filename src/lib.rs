@@ -448,7 +448,7 @@ where
         generated_per_block.clear();
         // @TODO triple_backtick_suffix
         generated_per_block.push_str(headers.top_prefix());
-        if config.pass_through_tags() {
+        if config.pass_through_mce_tags() {
             generated_per_block.push_str(block.mce_tag().unwrap_or(""));
         }
         generated_per_block.push_str(headers.mce_tag_suffix());
