@@ -316,10 +316,20 @@ fn nth_by_config_content_and_span(
                     }
                 })
                 .sum();
+            // This verification overlaps with/is duplicate of the actual filter (that is, the next
+            // closure), BUT only partially overlapping/duplicate. We do need this verification, in
+            // case there are no non-preamble code blocks at all - because then the filter is not
+            // called at all, so it can't verify the given code_block_index.
+            //
             // @TODO change to assert ext.
             if num_code_blocks <= code_block_index {
-                let _e = Displayish::from("err").as_macro_deep_diagnostic();
-                return Err(Displayish::from("err".to_owned()).as_macro_deep_diagnostic());
+                //let _e = Displayish::from("err").as_macro_deep_diagnostic();
+                return Err(Displayish::from(format!(
+                    "mce::nth*** expects a non-preamble code block with zero-based index \
+                             {code_block_index}, but it parsed only {num_code_blocks} non-preamble \
+                             code blocks."
+                ))
+                .as_macro_deep_diagnostic());
             }
             Ok(())
         },
