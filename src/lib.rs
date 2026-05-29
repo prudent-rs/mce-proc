@@ -53,7 +53,7 @@ const _ASSERT_MCE_LIB_VERSION: () = {
 pub fn all(input: ProcTokenStream) -> ProcTokenStream {
     match all_impl(input.into()) {
         Ok(input) => input.into(),
-        Err(diag) => diag.emit_as_expr_tokens().into(),
+        Err(diag) => panic!("{:?}", diag), //diag.emit_as_expr_tokens().into(),
     }
 }
 
@@ -77,7 +77,7 @@ fn all_impl(input: TokenStream) -> MacroStreamResult {
 pub fn all_by_file(input: ProcTokenStream) -> ProcTokenStream {
     match all_by_file_impl(input.into()) {
         Ok(input) => input.into(),
-        Err(diag) => diag.emit_as_expr_tokens().into(),
+        Err(diag) => panic!("{:?}", diag), //diag.emit_as_expr_tokens().into(),
     }
 }
 
@@ -96,7 +96,7 @@ fn load_file_to_const(span: Span, toml_config_file_path: &OwnedStringSlice) -> M
             )
         })
         .map_macro_err()
-        .spanned(span)
+        .span_err(span)
 }
 
 fn all_by_file_impl(input: TokenStream) -> MacroStreamResult {
@@ -122,7 +122,7 @@ fn all_by_file_impl(input: TokenStream) -> MacroStreamResult {
 pub fn nth(input: ProcTokenStream) -> ProcTokenStream {
     match nth_impl(input.into()) {
         Ok(input) => input.into(),
-        Err(diag) => diag.emit_as_expr_tokens().into(),
+        Err(diag) => panic!("{:?}", diag), //diag.emit_as_expr_tokens().into(),
     }
 }
 
@@ -137,7 +137,7 @@ fn code_block_index(index: &Literal) -> MacroDiagnosticResult<usize> {
             )
         })
         .map_macro_err()
-        .spanned(index.span())
+        .span_err(index.span())
 }
 
 fn nth_impl(input: TokenStream) -> MacroStreamResult {
@@ -161,7 +161,7 @@ fn nth_impl(input: TokenStream) -> MacroStreamResult {
 pub fn nth_by_file(input: ProcTokenStream) -> ProcTokenStream {
     match nth_by_file_impl(input.into()) {
         Ok(input) => input.into(),
-        Err(diag) => diag.emit_as_expr_tokens().into(),
+        Err(diag) => panic!("{:?}", diag), //diag.emit_as_expr_tokens().into(),
     }
 }
 
@@ -190,7 +190,7 @@ fn nth_by_file_impl(input: TokenStream) -> MacroStreamResult {
 pub fn mce_tag(input: ProcTokenStream) -> ProcTokenStream {
     match mce_tag_impl(input.into()) {
         Ok(input) => input.into(),
-        Err(diag) => diag.emit_as_expr_tokens().into(),
+        Err(diag) => panic!("{:?}", diag), //diag.emit_as_expr_tokens().into(),
     }
 }
 
@@ -232,7 +232,7 @@ fn mce_tag_impl_shared_cfg_by_content(
 pub fn mce_tag_by_file(input: ProcTokenStream) -> ProcTokenStream {
     match mce_tag_by_file_impl(input.into()) {
         Ok(input) => input.into(),
-        Err(diag) => diag.emit_as_expr_tokens().into(),
+        Err(diag) => panic!("{:?}", diag), //diag.emit_as_expr_tokens().into(),
     }
 }
 
@@ -287,7 +287,12 @@ fn all_by_config_content_and_span(
     prefix_stream: TokenStream,
     cfg_content_and_span: &impl ConfigContentAndSpan,
 ) -> MacroStreamResult {
-    selected_by_config_content_and_span(prefix_stream, cfg_content_and_span, |_, _, _| Ok(true))
+    selected_by_config_content_and_span(
+        prefix_stream,
+        cfg_content_and_span,
+        |_, _| Ok(()),
+        |_, _, _| Ok(true),
+    )
 }
 
 fn nth_by_config_content_and_span(
@@ -298,6 +303,26 @@ fn nth_by_config_content_and_span(
     selected_by_config_content_and_span(
         prefix_stream,
         cfg_content_and_span,
+        |_config, readme_extracted| {
+            let blocks = readme_extracted.non_preamble_blocks().clone();
+            let num_code_blocks: usize = blocks
+                .map(|b| {
+                    if let Ok(b) = b
+                        && b.is_code()
+                    {
+                        1
+                    } else {
+                        0
+                    }
+                })
+                .sum();
+            // @TODO change to assert ext.
+            if num_code_blocks <= code_block_index {
+                let _e = Displayish::from("err").as_macro_deep_diagnostic();
+                return Err(Displayish::from("err".to_owned()).as_macro_deep_diagnostic());
+            }
+            Ok(())
+        },
         |code_blocks, idx, _| {
             assert::true_or_error_with(idx < code_blocks.len(), || {
                 format!(
@@ -323,6 +348,7 @@ fn mce_tag_by_config_content_and_span(
     let result = selected_by_config_content_and_span(
         prefix_stream,
         cfg_content_and_span,
+        |_, _| Ok(()),
         |_, _, code_block| {
             let found = code_block.mce_tag() == Some(mce_tag);
             assert::true_or_error_with(
@@ -339,27 +365,31 @@ fn mce_tag_by_config_content_and_span(
         format!("did not find a code block with the given mce_tag: {mce_tag}")
     })
     .map_macro_err()
-    .spanned(cfg_content_and_span.span())?;
+    .span_err(cfg_content_and_span.span())?;
     result
 }
 // ----
 
-fn selected_by_config_content_and_span<F>(
+fn selected_by_config_content_and_span<V, F>(
     prefix_stream: TokenStream,
     cfg_content_and_span: &impl ConfigContentAndSpan,
-    code_block_filter: F,
+    validate: V,
+    mut filter: F,
 ) -> MacroStreamResult
 where
-    F: FnMut(&Vec<&dyn CodeBlock>, usize, &dyn CodeBlock) -> MacroDeepResult<bool>,
+    V: for<'r> FnOnce(&dyn Config, &mut dyn ReadmeExtracted<'r>) -> MacroDeepResult<()>,
+    F: for<'c> FnMut(&Vec<&'c dyn CodeBlock>, usize, &'c dyn CodeBlock) -> MacroDeepResult<bool>,
 {
     let config_and_span = mce_lib::public::config_and_span(cfg_content_and_span)?;
     let readme_loaded = mce_lib::public::readme_load(&config_and_span)?;
+
     let span = config_and_span.span();
-    let readme_extracted = mce_lib::public::readme_extract(&readme_loaded).spanned(span)?;
+    let mut readme_extracted = mce_lib::public::readme_extract(&readme_loaded).span_err(span)?;
 
-    let (config, span) = (config_and_span.config(), config_and_span.span());
+    let config = config_and_span.config();
+    let _ = validate(config, &mut readme_extracted).span_err(span)?;
 
-    impl_filtered(prefix_stream, config, readme_extracted, code_block_filter).spanned(span)
+    impl_filtered(prefix_stream, config, readme_extracted, &mut filter).span_err(span)
 }
 
 macro_rules! token_stream_from_str {
@@ -393,7 +423,7 @@ fn impl_filtered<'a, F>(
     mut code_block_filter: F,
 ) -> MacroDeepResult<TokenStream>
 where
-    F: FnMut(&Vec<&dyn CodeBlock>, usize, &dyn CodeBlock) -> MacroDeepResult<bool>,
+    F: for<'c> FnMut(&Vec<&'c dyn CodeBlock>, usize, &'c dyn CodeBlock) -> MacroDeepResult<bool>,
 {
     let headers = config.code_headers();
 
