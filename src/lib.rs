@@ -52,7 +52,7 @@ const _ASSERT_MCE_LIB_VERSION: () = {
 #[proc_macro]
 pub fn all(input: ProcTokenStream) -> ProcTokenStream {
     match all_impl(input.into()) {
-        Ok(input) => input.into(),
+        Ok(output) => output.into(),
         Err(diag) => panic!("{:?}", diag), //diag.emit_as_expr_tokens().into(),
     }
 }
@@ -76,7 +76,7 @@ fn all_impl(input: TokenStream) -> MacroStreamResult {
 #[proc_macro]
 pub fn all_by_file(input: ProcTokenStream) -> ProcTokenStream {
     match all_by_file_impl(input.into()) {
-        Ok(input) => input.into(),
+        Ok(output) => output.into(),
         Err(diag) => panic!("{:?}", diag), //diag.emit_as_expr_tokens().into(),
     }
 }
@@ -121,7 +121,7 @@ fn all_by_file_impl(input: TokenStream) -> MacroStreamResult {
 #[proc_macro]
 pub fn nth(input: ProcTokenStream) -> ProcTokenStream {
     match nth_impl(input.into()) {
-        Ok(input) => input.into(),
+        Ok(output) => output.into(),
         Err(diag) => panic!("{:?}", diag), //diag.emit_as_expr_tokens().into(),
     }
 }
@@ -160,7 +160,7 @@ fn nth_impl(input: TokenStream) -> MacroStreamResult {
 #[proc_macro]
 pub fn nth_by_file(input: ProcTokenStream) -> ProcTokenStream {
     match nth_by_file_impl(input.into()) {
-        Ok(input) => input.into(),
+        Ok(output) => output.into(),
         Err(diag) => panic!("{:?}", diag), //diag.emit_as_expr_tokens().into(),
     }
 }
@@ -189,7 +189,7 @@ fn nth_by_file_impl(input: TokenStream) -> MacroStreamResult {
 #[proc_macro]
 pub fn mce_tag(input: ProcTokenStream) -> ProcTokenStream {
     match mce_tag_impl(input.into()) {
-        Ok(input) => input.into(),
+        Ok(output) => output.into(),
         Err(diag) => panic!("{:?}", diag), //diag.emit_as_expr_tokens().into(),
     }
 }
@@ -231,7 +231,7 @@ fn mce_tag_impl_shared_cfg_by_content(
 #[proc_macro]
 pub fn mce_tag_by_file(input: ProcTokenStream) -> ProcTokenStream {
     match mce_tag_by_file_impl(input.into()) {
-        Ok(input) => input.into(),
+        Ok(output) => output.into(),
         Err(diag) => panic!("{:?}", diag), //diag.emit_as_expr_tokens().into(),
     }
 }
