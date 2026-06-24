@@ -1,6 +1,6 @@
 [package]
 name = "mce-proc"
-version = "0.0.4"
+version = "0.0.6"
 
 edition = "2024"
 # Rust 1.88.0+ is required by mce-lib.
@@ -31,11 +31,15 @@ proc-macro2 = {version="1.0.60", features=["span-locations"] }
 
 # for local development:
 #
-# dis = { version = "0.0.2", path = "../dis", features = ["proc-macro2-diagnostics"]}
-dis = { version = "0.0.2", features = ["proc-macro2-diagnostics"]}
+# dis = { version = "0.0.4", path = "../dis", features = ["proc-macro2-diagnostics"]}
+dis = { version = "0.0.4", features = ["proc-macro2-diagnostics"]}
 
 # EXACT VERSION with = prefix
-mce-lib = {version="= 0.0.4", path="../mce-lib", features=["std"]}
+#
+# for local development:
+#
+# mce-lib = {version="= 0.0.6", path="../mce-lib", features=["std"]}
+mce-lib = {version="= 0.0.6", features=["std"]}
 
 quote = "1.0.26"
 serde = { version = "1.0", features = ["derive"] }

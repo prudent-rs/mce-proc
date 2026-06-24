@@ -3,6 +3,7 @@
 use core::str::FromStr;
 use dis::prelude_ext::{alloc::*, core::*, proc_macro2_diagnostics::*};
 use dis::{Displayish, MacroDeepResult, MacroDiagnosticResult, assert};
+
 use mce_lib::public::{
     CodeBlock, Config, ConfigAndSpan, ConfigContentAndSpan, OwnedStringSlice, ReadmeBlock,
     ReadmeExtracted,
@@ -89,14 +90,14 @@ fn load_file_to_const(span: Span, toml_config_file_path: &OwnedStringSlice) -> M
         format!("const _: &str = ::std::include_str!(\"{toml_config_file_path}\");\n");
 
     TokenStream::from_str(&prefix_stream)
-        .map_err_dbg_with(|| {
+        .dis_map_err_dbg_with(|| {
             format!(
                 "the TOML config file path is not well formed, or it failed to parse: {}",
                 prefix_stream
             )
         })
-        .map_macro_err()
-        .span_err(span)
+        .dis_map_macro_err()
+        .dis_span_err(span)
 }
 
 fn all_by_file_impl(input: TokenStream) -> MacroStreamResult {
@@ -130,14 +131,14 @@ fn code_block_index(index: &Literal) -> MacroDiagnosticResult<usize> {
     let index_string = index.to_string();
     index_string
         .parse::<usize>()
-        .map_err_dbg_with(|| {
+        .dis_map_err_dbg_with(|| {
             format!(
                 "Expecting a non-negative (usize) index literal, but received: {}",
                 index_string
             )
         })
-        .map_macro_err()
-        .span_err(index.span())
+        .dis_map_macro_err()
+        .dis_span_err(index.span())
 }
 
 fn nth_impl(input: TokenStream) -> MacroStreamResult {
@@ -329,7 +330,7 @@ fn nth_by_config_content_and_span(
                              {code_block_index}, but it parsed only {num_code_blocks} non-preamble \
                              code blocks."
                 ))
-                .as_macro_deep_diagnostic());
+                .dis_as_macro_deep_diagnostic());
             }
             Ok(())
         },
@@ -340,8 +341,8 @@ fn nth_by_config_content_and_span(
                     code_blocks.len()
                 )
             })
-            .map_macro_err()
-            .to_string_based()?;
+            .dis_map_macro_err()
+            .dis_to_string_based()?;
             Ok(idx == code_block_index)
         },
     )
@@ -365,8 +366,8 @@ fn mce_tag_by_config_content_and_span(
                 !found || !mce_tag_exactly_one_match || !already_found,
                 || format!("already found one code block with the same mce_tag: {mce_tag}"),
             )
-            .map_macro_err()
-            .to_string_based()?;
+            .dis_map_macro_err()
+            .dis_to_string_based()?;
             already_found |= found;
             Ok(found)
         },
@@ -374,8 +375,8 @@ fn mce_tag_by_config_content_and_span(
     assert::true_or_error_with(!mce_tag_exactly_one_match || already_found, || {
         format!("did not find a code block with the given mce_tag: {mce_tag}")
     })
-    .map_macro_err()
-    .span_err(cfg_content_and_span.span())?;
+    .dis_map_macro_err()
+    .dis_span_err(cfg_content_and_span.span())?;
     result
 }
 // ----
@@ -394,12 +395,13 @@ where
     let readme_loaded = mce_lib::public::readme_load(&config_and_span)?;
 
     let span = config_and_span.span();
-    let mut readme_extracted = mce_lib::public::readme_extract(&readme_loaded).span_err(span)?;
+    let mut readme_extracted =
+        mce_lib::public::readme_extract(&readme_loaded).dis_span_err(span)?;
 
     let config = config_and_span.config();
-    let _ = validate(config, &mut readme_extracted).span_err(span)?;
+    let _ = validate(config, &mut readme_extracted).dis_span_err(span)?;
 
-    impl_filtered(prefix_stream, config, readme_extracted, &mut filter).span_err(span)
+    impl_filtered(prefix_stream, config, readme_extracted, &mut filter).dis_span_err(span)
 }
 
 macro_rules! token_stream_from_str {
@@ -407,14 +409,14 @@ macro_rules! token_stream_from_str {
         ({
             let input_string = $input_string;
             TokenStream::from_str(input_string)
-                .map_err_dbg_with(|| {
+                .dis_map_err_dbg_with(|| {
                     format!(
                         "mce-proc failed to parse: {}
                          unpaired or incorrect Rust tokens in: {}",
                         $err_intended_result_description, input_string
                     )
                 })
-                .map_macro_err()
+                .dis_map_macro_err()
                 .map_err(Displayish::to_string_based)?
         })
     };
